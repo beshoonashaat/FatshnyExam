@@ -1,0 +1,2 @@
+import { NextResponse } from 'next/server'; import { getExamState } from '@/lib/storage'; import { EXAM_ID } from '@/lib/exam';
+export const dynamic='force-dynamic'; export async function GET(req:Request){const id=new URL(req.url).searchParams.get('examId');if(id!==EXAM_ID)return NextResponse.json({error:'INVALID_EXAM'},{status:404});const s=await getExamState(true);return NextResponse.json({status:s.status,closeMode:s.closeMode,updatedAt:s.updatedAt},{headers:{'Cache-Control':'no-store'}})}

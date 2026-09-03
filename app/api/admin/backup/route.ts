@@ -1,0 +1,1 @@
+import { NextResponse } from 'next/server'; import { isAdmin } from '@/lib/auth'; import { createBackup } from '@/lib/storage';export async function POST(){if(!await isAdmin())return NextResponse.json({error:'UNAUTHORIZED'},{status:401});try{return NextResponse.json(await createBackup())}catch(e){console.error(e);return NextResponse.json({message:'Backup failed'},{status:500})}}

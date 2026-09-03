@@ -1,0 +1,2 @@
+import { NextResponse } from 'next/server'; import { adminCookie,createAdminToken,verifyAdminPassword } from '@/lib/auth';
+export async function POST(req:Request){const b=await req.json().catch(()=>({}));if(!verifyAdminPassword(String(b.password||'')))return NextResponse.json({ok:false},{status:401});const r=NextResponse.json({ok:true});r.cookies.set(adminCookie.name,createAdminToken(),adminCookie.options);return r}

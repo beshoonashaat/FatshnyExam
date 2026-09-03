@@ -1,0 +1,1 @@
+import { NextResponse } from 'next/server'; import { adminCookie } from '@/lib/auth'; export async function POST(){const r=NextResponse.json({ok:true});r.cookies.set(adminCookie.name,'',{...adminCookie.options,maxAge:0});return r}
