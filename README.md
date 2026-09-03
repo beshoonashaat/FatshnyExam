@@ -74,3 +74,7 @@ ADMIN_SESSION_SECRET=your-long-random-secret
 - جرّب إرسال عدة تسليمات متزامنة.
 - جرّب Excel/CSV/JSON من `/admin`.
 - جرّب إغلاق الامتحان بينما صفحة طالب مفتوحة وتأكد أن Submit يُرفض.
+
+## Exam duration
+
+The exam duration is fixed at **30 minutes per started session**. The server signs each session using `ADMIN_SESSION_SECRET`, so the client cannot extend the deadline by editing `startedAt` or browser state. The UI shows a live countdown, and the submission API rejects submissions after the signed expiry time.

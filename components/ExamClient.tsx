@@ -45,7 +45,25 @@ export default function ExamClient() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [submissionCode, setSubmissionCode] = useState('');
+  const [secondsLeft, setSecondsLeft] = useState(30 * 60);
+  const [timeExpired, setTimeExpired] = useState(false);
   const events = useRef<SecurityEvent[]>([]);
+
+  useEffect(() => {
+    if (!session || (step !== 'exam' && step !== 'review')) return;
+
+    const updateTimer = () => {
+      const remaining = Math.max(0, Math.ceil((new Date(session.expiresAt).getTime() - Date.now()) / 1000));
+      setSecondsLeft(remaining);
+      if (remaining <= 0) setTimeExpired(true);
+    };
+
+    updateTimer();
+    const timer = window.setInterval(updateTimer, 1000);
+    return () => window.clearInterval(timer);
+  }, [session, step]);
+
+  const timerText = `${String(Math.floor(secondsLeft / 60)).padStart(2, '0')}:${String(secondsLeft % 60).padStart(2, '0')}`;
 
   const answered = useMemo(
     () => questions.filter((question) => (answers[question.id] || '').trim()).length,
@@ -175,6 +193,7 @@ export default function ExamClient() {
           participant,
           sessionId: session.sessionId,
           startedAt: session.startedAt,
+          sessionToken: session.sessionToken,
           answers,
           securityEvents: events.current,
         }),
@@ -186,6 +205,7 @@ export default function ExamClient() {
           setClosed(true);
           setStatus('CLOSED');
         }
+        if (data.code === 'EXAM_TIME_EXPIRED') setTimeExpired(true);
         setError(data.message || 'تعذر تسليم الامتحان.');
         return;
       }
@@ -290,7 +310,7 @@ export default function ExamClient() {
                 </div>
               )}
 
-              <button className="btn btn-primary" disabled={busy || closed}>
+              <button className="btn btn-primary" disabled={busy || closed || timeExpired}>
                 {busy ? 'جاري التحقق...' : 'ابدأ الامتحان'} <ChevronLeft size={18} />
               </button>
             </form>
@@ -328,12 +348,12 @@ export default function ExamClient() {
         </div>
       </div>
 
-      {closed && (
+      {(closed || timeExpired) && (
         <div className="overlay">
           <div className="card">
             <AlertTriangle size={48} color="#c73535" />
-            <h2>تم إغلاق الامتحان بواسطة المسؤول</h2>
-            <p>لم يعد بإمكانك إرسال إجابتك.</p>
+            <h2>{timeExpired ? 'انتهى وقت الامتحان' : 'تم إغلاق الامتحان بواسطة المسؤول'}</h2>
+            <p>{timeExpired ? 'انتهت مدة الـ30 دقيقة ولم يعد بإمكانك إرسال الإجابات.' : 'لم يعد بإمكانك إرسال إجابتك.'}</p>
             <p className="muted small">إجاباتك المكتوبة ما زالت محفوظة محليًا على جهازك ولم يتم مسحها.</p>
           </div>
         </div>
@@ -346,9 +366,15 @@ export default function ExamClient() {
               <strong>{EXAM_TITLE}</strong>
               <div className="small muted">{participant.fullName} • رقم الغياب {participant.attendanceNumber}</div>
             </div>
-            <div className={`status ${status === 'OPEN' ? 'open' : 'closed'}`}>
-              <span className="dot" />
-              {status === 'OPEN' ? 'الامتحان مفتوح' : 'غير متاح'}
+            <div className="row">
+              <div className={`exam-timer ${secondsLeft <= 300 ? 'ending' : ''}`}>
+                <span>الوقت المتبقي</span>
+                <strong dir="ltr">{timerText}</strong>
+              </div>
+              <div className={`status ${status === 'OPEN' ? 'open' : 'closed'}`}>
+                <span className="dot" />
+                {status === 'OPEN' ? 'الامتحان مفتوح' : 'غير متاح'}
+              </div>
             </div>
           </div>
           <div className="progress" style={{ marginTop: 9 }}>
@@ -375,7 +401,7 @@ export default function ExamClient() {
             {error && <div className="notice danger-notice">{error}</div>}
             <div className="row" style={{ marginTop: 18 }}>
               <button className="btn btn-secondary" onClick={() => setStep('exam')}>العودة للإجابات</button>
-              <button className="btn btn-primary" onClick={submit} disabled={busy || closed}>
+              <button className="btn btn-primary" onClick={submit} disabled={busy || closed || timeExpired}>
                 <Send size={17} />{busy ? 'جاري التسليم...' : 'تسليم الامتحان'}
               </button>
             </div>

@@ -11,7 +11,7 @@ export interface ExamState {
   closedAt: string | null;
   updatedAt: string;
 }
-export interface SessionInfo { sessionId: string; startedAt: string; participant: Participant }
+export interface SessionInfo { sessionId: string; startedAt: string; expiresAt: string; sessionToken: string; participant: Participant }
 export interface Submission {
   version: 1;
   submissionCode: string;
